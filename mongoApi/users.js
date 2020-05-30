@@ -5,6 +5,7 @@ const Books = require("../models/booksModel");
 const secret = process.env.SECRET;
 
 module.exports.ReadUser = user => {
+  console.log("read user")
   return new Promise((resolve, reject) => {
     try {
       User.findOne({ email: user.email })

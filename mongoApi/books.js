@@ -1,5 +1,6 @@
 const User = require("../models/usersModel");
 const Books = require("../models/booksModel");
+const Summary = require("../models/summariesModel");
 const rp = require("request-promise");
 
 module.exports.GetFilteredBooks = filters => {
@@ -34,16 +35,19 @@ module.exports.GetAllBooks = () => {
 
 module.exports.GetRecentlyAddedBooks = () => {
   return new Promise(async (resolve, reject) => {
- try {
-      const recentlyAddedBooks = await Books.find({}).sort({"dateAdded" :"desc"}).limit(20).exec();
+    try {
+      const recentlyAddedBooks = await Books.find({})
+        .sort({ dateAdded: "desc" })
+        .limit(20)
+        .exec();
       if (recentlyAddedBooks) {
         resolve({ recentlyAddedBooks });
       } else resolve({ error: "No books in library" });
     } catch (err) {
       resolve({ error: "syntax error" });
     }
-  })
-}
+  });
+};
 
 module.exports.GetBooks = query => {
   return new Promise((resolve, reject) => {
@@ -223,103 +227,104 @@ module.exports.GetTopThreads = ({ bookId, limit }) => {
   });
 };
 
-module.exports.AddView = ({bookId, threadId}) => {
-  return new Promise(async (resolve, reject) => {
-     try {
-    const updatedValue = await Books.findOneAndUpdate(
-      { _id: bookId, "threads._id": threadId },
-      {
-        $inc: { "threads.$.views": 1 },
-      }
-    ).exec();
-    if (updatedValue) {
-      resolve({ updatedValue });
-    } else resolve({ error: "Couldn't add view" });
-  } catch (er) {
-    resolve({ error: "Syntax error" });
-  }
-  })
-  
-}
-
-module.exports.ReplyToQuestion = ({reply, bookId, userId, threadId}) => {
+module.exports.AddView = ({ bookId, threadId }) => {
   return new Promise(async (resolve, reject) => {
     try {
-    const insertedReply = await Books.updateOne(
-      { _id: bookId, "threads._id": threadId },
-      {
-        $addToSet: {
-          "threads.$.replies": {
-            reply: reply,
-            repliedBy: userId,
-            date: Date.now(),
-          },
-        },
-      }
-    );
-    if (insertedReply) {
-      resolve({insertedReply });
-    } else resolve({ error: "Couldn't reply to question" });
-  } catch (er) {
-    resolve({ error: "Syntax error" });
-  }
-  })
-  
-}
-
-module.exports.GetThread = ({bookId, threadId}) => {
-  return new Promise(async (resolve, reject) => {
-    let filter = {};
-  filter["_id"] = bookId;
-  filter["threads._id"] = threadId;
-  try {
-    const threads = await Books.findOne(filter, {
-      "threads.$": 1,
-    })
-      .populate("threads.replies.repliedBy")
-      .populate("threads.createdBy")
-      .exec();
-    if (threads.threads[0]) {
-      resolve({ success: true, thread: threads.threads[0] });
-    } else resolve({ error: true });
-  } catch (er) {
-    resolve({ error: true });
-  }
-  })
-}
-
-module.exports.AddBookToFavorites = ({bookId, userId}) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-    let updatedBook;
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId, "favoriteBooks.book": { $ne: bookId } },
-      {
-        $push: {
-          favoriteBooks: {
-            book: bookId,
-          },
-        },
-      }
-    );
-
-    if (updatedUser) {
-      updatedBook = await Books.findOneAndUpdate(
-        { _id: bookId },
+      const updatedValue = await Books.findOneAndUpdate(
+        { _id: bookId, "threads._id": threadId },
         {
-          $inc: { favorite: 1 },
+          $inc: { "threads.$.views": 1 }
+        }
+      ).exec();
+      if (updatedValue) {
+        resolve({ updatedValue });
+      } else resolve({ error: "Couldn't add view" });
+    } catch (er) {
+      resolve({ error: "Syntax error" });
+    }
+  });
+};
+
+module.exports.ReplyToQuestion = ({ reply, bookId, userId, threadId }) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const insertedReply = await Books.updateOne(
+        { _id: bookId, "threads._id": threadId },
+        {
+          $addToSet: {
+            "threads.$.replies": {
+              reply: reply,
+              repliedBy: userId,
+              date: Date.now()
+            }
+          }
         }
       );
+      if (insertedReply) {
+        resolve({ insertedReply });
+      } else resolve({ error: "Couldn't reply to question" });
+    } catch (er) {
+      resolve({ error: "Syntax error" });
     }
+  });
+};
 
-    console.log("updaetd user", updatedUser);
-    if (updatedBook && updatedUser) {
-      resolve({ updatedUser, updatedBook });
-    } else {
-      resolve({ error: "Couldn't  add to favorite" });
+module.exports.GetThread = ({ bookId, threadId }) => {
+  return new Promise(async (resolve, reject) => {
+    let filter = {};
+    filter["_id"] = bookId;
+    filter["threads._id"] = threadId;
+    try {
+      const threads = await Books.findOne(filter, {
+        "threads.$": 1
+      })
+        .populate("threads.replies.repliedBy")
+        .populate("threads.createdBy")
+        .exec();
+      if (threads.threads[0]) {
+        resolve({ success: true, thread: threads.threads[0] });
+      } else resolve({ error: true });
+    } catch (er) {
+      resolve({ error: true });
     }
-  } catch (er) {
-    resolve({ error: "Syntax error" });
-  }
-  })
-}
+  });
+};
+
+module.exports.AddBookToFavorites = ({ bookId, userId }) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let updatedBook;
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: userId, "favoriteBooks.book": { $ne: bookId } },
+        {
+          $push: {
+            favoriteBooks: {
+              book: bookId
+            }
+          }
+        }
+      );
+
+      if (updatedUser) {
+        updatedBook = await Books.findOneAndUpdate(
+          { _id: bookId },
+          {
+            $inc: { favorite: 1 }
+          }
+        );
+      }
+
+      console.log("updaetd user", updatedUser);
+      if (updatedBook && updatedUser) {
+        resolve({ updatedUser, updatedBook });
+      } else {
+        resolve({ error: "Couldn't  add to favorite" });
+      }
+    } catch (er) {
+      resolve({ error: "Syntax error" });
+    }
+  });
+};
+
+
+

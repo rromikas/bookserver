@@ -42,6 +42,8 @@ const BooksSchema = new Schema({
 
   favorite: { type: Number, default: 0 },
 
+  summaries: [{ summary: { type: mongoose.Schema.Types.ObjectId, ref: "Summary" } }],
+  
   threads: [
     {
       date: Number,
