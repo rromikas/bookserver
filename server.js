@@ -29,6 +29,7 @@ const {
   AddBookToFavorites,
   GetRecentlyAddedBooks
 } = require("./mongoApi/books");
+const { AddSummary, GetTopRatedSummaries } = require("./mongoApi/summaries");
 const mongoose = require("mongoose");
 
 mongoose
@@ -47,10 +48,11 @@ mongoose
   );
 
 io.on("connection", socket => {
-
   socket.on("/users/read", token => {
-    verifyToken(token, async user => {
-      let response = await ReadUser(user);
+    verifyToken(token, async (err, user) => {
+      let response = err
+        ? { error: "couldn't verify user" }
+        : await ReadUser(user);
       socket.emit("/users/read", response);
     });
   });
@@ -70,7 +72,7 @@ io.on("connection", socket => {
   });
 
   socket.on("/users/update", data => {
-    verifyToken(data.token, async (user) => {
+    verifyToken(data.token, async user => {
       data.email = user.email;
       let response = await UpdateUser(data);
       socket.emit("/users/update", response);
@@ -99,8 +101,9 @@ io.on("connection", socket => {
     let response = await GetBooks(query);
     socket.emit("/books/getBooks", response);
   });
-  
-  socket.on("/books/getRecentlyAddedBooks", async query => {
+
+  socket.on("/books/getRecentlyAddedBooks", async () => {
+    console.log("recent boks reaqeust");
     let response = await GetRecentlyAddedBooks();
     socket.emit("/books/getRecentlyAddedBooks", response);
   });
@@ -122,7 +125,6 @@ io.on("connection", socket => {
 
   socket.on("/books/createThread", async thread => {
     let response = await CreateThread(thread);
-    console.log("REPSONS ECREAT THREAD", response);
     socket.emit("/books/createThread", response);
   });
 
@@ -153,5 +155,20 @@ io.on("connection", socket => {
   socket.on("/books/addToFavorites", async props => {
     let response = await AddBookToFavorites(props);
     socket.emit("/books/addToFavorites", response);
+  });
+  socket.on("/books/getTopRatedSummaries", async props => {
+    console.log("received request get top rated summaries", props)
+    let response = await GetTopRatedSummaries(props);
+    socket.emit("/books/getTopRatedSummaries", response);
+  });
+  socket.on("/books/getMostRecentSummaries", async props => {
+    let response = await AddBookToFavorites(props);
+    socket.emit("/books/getMostRecentSummaries", response);
+  });
+  socket.on("/books/addSummary", async props => {
+    console.log("add summary received", props);
+    let response = await AddSummary(props);
+    console.log("add summary resposne", response);
+    socket.emit("/books/addSummary", response);
   });
 });

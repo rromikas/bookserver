@@ -24,6 +24,9 @@ const UserShema = new mongoose.Schema({
   favoriteBooks: [
     { book: { type: mongoose.Schema.Types.ObjectId, ref: "books" } },
   ],
+  
+  summaries:[{ summary: { type: mongoose.Schema.Types.ObjectId, ref: "Summary" } },]
+  
 });
 const User = mongoose.model("User", UserShema);
 

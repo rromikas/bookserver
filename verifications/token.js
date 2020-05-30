@@ -5,9 +5,11 @@ const secret = process.env.SECRET;
 const verifyToken = (token, next) => {
   jwt.verify(token, secret, (err, decoded) => {
     if (!err) {
-      next(decoded.data);
-    }})
-    
+      next(null, decoded.data);
+    } else {
+      next({ error: true }, null);
+    }
+  });
 };
 
 module.exports = verifyToken;
